@@ -1,0 +1,38 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ mode|title }} - TrustVault</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>{{ mode|title }}</h1>
+
+        {% with messages = get_flashed_messages() %}
+            {% for message in messages %}
+                <p class="message">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="POST">
+            <label>Username</label>
+            <input type="text" name="username" required minlength="3">
+
+            <label>Password</label>
+            <input type="password" name="password"
+                   required minlength="8">
+
+            <button type="submit">{{ mode|title }}</button>
+        </form>
+
+        {% if mode == "login" %}
+            <p>New user? <a href="{{ url_for('register') }}">Register</a></p>
+        {% else %}
+            <p>Already registered? <a href="{{ url_for('login') }}">Login</a></p>
+        {% endif %}
+    </div>
+</body>
+</html>
