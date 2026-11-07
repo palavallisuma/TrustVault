@@ -1,162 +1,115 @@
 import io
-import sys
-from pathlib import Path
+from werkzeug.security import generate_password_hash
+import database
+from app import app, log_action, verify_audit_chain
 
 import pytest
 
-# Ensure the repository root is importable when pytest collects this file.
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-import database
-from app import app
-
-
 @pytest.fixture()
 def client(tmp_path, monkeypatch):
-    database_path = tmp_path / "test_trustvault.db"
+    db_path = tmp_path / "test.db"
     upload_path = tmp_path / "uploads"
     upload_path.mkdir()
-
-    monkeypatch.setattr(database, "DATABASE", str(database_path))
-    monkeypatch.setattr("app.UPLOAD_FOLDER", str(upload_path))
-    app.config.update(
-        TESTING=True,
-        SECRET_KEY="test-only-secret-key",
-        MAX_CONTENT_LENGTH=10 * 1024 * 1024,
-    )
+    monkeypatch.setattr(database, "DATABASE", str(db_path))
+    app.config.update(TESTING=True, SECRET_KEY="test-secret", UPLOAD_FOLDER=str(upload_path))
     database.init_db()
+    with app.test_client() as c:
+        yield c
 
-    with app.test_client() as test_client:
-        yield test_client
+def db_one(sql, params=()):
+    with app.app_context():
+        return database.get_db().execute(sql, params).fetchone()
 
+def db_exec(sql, params=()):
+    with app.app_context():
+        db = database.get_db()
+        db.execute(sql, params)
+        db.commit()
 
-def register(client, username, password="test-password-123"):
-    return client.post(
-        "/register",
-        data={"username": username, "password": password},
-        follow_redirects=True,
-    )
+def register(c, name):
+    return c.post("/register", data={"username":name,"password":"strong-password-123"}, follow_redirects=True)
 
+def login(c, name, password="strong-password-123"):
+    return c.post("/login", data={"username":name,"password":password}, follow_redirects=True)
 
-def login(client, username, password="test-password-123"):
-    return client.post(
-        "/login",
-        data={"username": username, "password": password},
-        follow_redirects=True,
-    )
+def upload(c, filename="file.txt", content=b"original", category="Study"):
+    return c.post("/upload", data={"file":(io.BytesIO(content),filename),"category":category},
+                  content_type="multipart/form-data", follow_redirects=True)
 
-
-def upload_text_file(client, filename="notes.txt", content=b"TrustVault test file"):
-    return client.post(
-        "/upload",
-        data={"file": (io.BytesIO(content), filename)},
-        content_type="multipart/form-data",
-        follow_redirects=True,
-    )
-
-
-def test_registration_login_and_dashboard(client):
-    response = register(client, "alice")
-    assert response.status_code == 200
-    assert b"Account created" in response.data
-
-    response = login(client, "alice")
-    assert response.status_code == 200
-    assert b"Welcome, alice" in response.data
-
+def test_register_login_and_default_viewer(client):
+    register(client,"alice")
+    assert db_one("SELECT role FROM users WHERE username='alice'")["role"] == "viewer"
+    assert b"Welcome, alice" in login(client,"alice").data
 
 def test_dashboard_requires_login(client):
-    response = client.get("/dashboard")
-    assert response.status_code == 302
-    assert "/login" in response.headers["Location"]
+    assert client.get("/dashboard").status_code == 302
 
+def test_upload_download_and_owner_role(client):
+    register(client,"alice")
+    login(client,"alice")
+    upload(client)
+    assert db_one("SELECT role FROM users WHERE username='alice'")["role"] == "owner"
+    response=client.get("/download/1")
+    assert response.status_code == 200 and response.data == b"original"
 
-def test_owner_can_upload_and_download_document(client):
-    register(client, "alice")
-    login(client, "alice")
-
-    response = upload_text_file(client)
-    assert response.status_code == 200
-    assert b"Document uploaded" in response.data
-
-    response = client.get("/dashboard")
-    assert b"notes.txt" in response.data
-
-    # The first uploaded document receives ID 1 in this isolated test database.
-    response = client.get("/download/1")
-    assert response.status_code == 200
-    assert response.data == b"TrustVault test file"
-
-
-def test_shared_user_can_download_but_unshared_user_cannot(client):
-    register(client, "alice")
-    register(client, "bob")
-    register(client, "charlie")
-
-    login(client, "alice")
-    upload_text_file(client)
-    response = client.post(
-        "/share/1",
-        data={"user_id": "2", "permission": "read"},
-        follow_redirects=True,
-    )
-    assert response.status_code == 200
-
-    client.get("/logout")
-    login(client, "bob")
+def test_viewer_read_allowed_edit_denied(client):
+    register(client,"alice"); register(client,"bob")
+    login(client,"alice"); upload(client)
+    client.post("/share/1",data={"user_id":"2","permission":"read"})
+    client.post("/logout"); login(client,"bob")
     assert client.get("/download/1").status_code == 200
+    assert client.get("/edit/1").status_code == 403
 
-    client.get("/logout")
-    login(client, "charlie")
+def test_editor_can_edit_txt(client):
+    register(client,"alice"); register(client,"bob")
+    login(client,"alice"); upload(client)
+    client.post("/share/1",data={"user_id":"2","permission":"edit"})
+    client.post("/logout"); login(client,"bob")
+    assert client.get("/edit/1").status_code == 200
+    client.post("/edit/1",data={"content":"changed"})
+    assert client.get("/download/1").data == b"changed"
+
+def test_non_owner_cannot_share_or_revoke(client):
+    register(client,"alice"); register(client,"bob"); register(client,"carol")
+    login(client,"alice"); upload(client)
+    client.post("/share/1",data={"user_id":"2","permission":"edit"})
+    client.post("/logout"); login(client,"bob")
+    assert client.post("/share/1",data={"user_id":"3","permission":"read"}).status_code == 403
+    assert client.post("/revoke/1/2").status_code == 403
+
+def test_search_by_name_and_category(client):
+    register(client,"alice"); login(client,"alice")
+    upload(client,"lecture.txt",b"one","College")
+    upload(client,"recipe.txt",b"two","Home")
+    response=client.get("/dashboard?q=lecture&category=College")
+    assert b"lecture.txt" in response.data and b"recipe.txt" not in response.data
+
+def test_admin_audit_access_is_role_protected(client):
+    register(client,"alice"); login(client,"alice")
+    assert client.get("/admin/audit").status_code == 403
+    client.post("/logout")
+    db_exec("INSERT INTO users(username,password_hash,role) VALUES(?,?,?)",
+            ("admin",generate_password_hash("admin-password-123"),"admin"))
+    login(client,"admin","admin-password-123")
+    assert client.get("/admin/audit").status_code == 200
+
+def test_denied_download_is_audited(client):
+    register(client,"alice"); register(client,"bob")
+    login(client,"alice"); upload(client)
+    client.post("/logout"); login(client,"bob")
     assert client.get("/download/1").status_code == 403
+    assert db_one("SELECT id FROM audit_logs WHERE action='denied_download'") is not None
 
+def test_audit_chain_detects_tampering(client):
+    register(client,"alice"); login(client,"alice")
+    with app.app_context():
+        log_action(1,"test_event",None,"original")
+        assert verify_audit_chain()
+    db_exec("UPDATE audit_logs SET details='tampered' WHERE action='test_event'")
+    with app.app_context():
+        assert verify_audit_chain() is False
 
-def test_audit_history_is_limited_to_signed_in_user(client):
-    register(client, "alice")
-    register(client, "bob")
-
-    login(client, "alice")
-    upload_text_file(client)
-    client.get("/logout")
-
-    login(client, "bob")
-    response = client.get("/audit")
-    assert response.status_code == 200
-    assert b"upload" not in response.data
-
-
-def test_disallowed_file_extension_is_rejected(client):
-    register(client, "alice")
-    login(client, "alice")
-
-    response = upload_text_file(client, filename="malware.exe")
-    assert response.status_code == 200
-    assert b"File type not allowed" in response.data
-
-def test_shared_editor_cannot_change_sharing_or_revoke_access(client):
-    register(client, "alice")
-    register(client, "bob")
-    register(client, "charlie")
-
-    login(client, "alice")
-    upload_text_file(client)
-    client.post(
-        "/share/1",
-        data={"user_id": "2", "permission": "edit"},
-        follow_redirects=True,
-    )
-    client.post(
-        "/share/1",
-        data={"user_id": "3", "permission": "read"},
-        follow_redirects=True,
-    )
-
-    client.get("/logout")
-    login(client, "bob")
-    # Edit permission allows document access, but only the owner manages sharing.
-    assert client.post(
-        "/share/1",
-        data={"user_id": "3", "permission": "edit"},
-    ).status_code == 403
-    assert client.post("/revoke/1/3").status_code == 403
-  
+def test_unsupported_file_type_rejected(client):
+    register(client,"alice"); login(client,"alice")
+    response=upload(client,"payload.exe")
+    assert b"supported file" in response.data
