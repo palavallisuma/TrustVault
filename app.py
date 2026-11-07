@@ -7,12 +7,14 @@ import json
 from functools import wraps
 from datetime import datetime, timezone
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory, abort
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from database import init_db, get_db, close_db
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+CSRFProtect(app)
 app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax",
                   SESSION_COOKIE_SECURE=os.environ.get("COOKIE_SECURE", "0") == "1",
                   MAX_CONTENT_LENGTH=10 * 1024 * 1024)
