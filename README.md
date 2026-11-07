@@ -84,6 +84,8 @@ TrustVault does not publish default usernames or passwords. Configure the Admin 
 - [Threat model and security limitations](THREATS.md)
 - [HTTP route and permission reference](API.md)
 - [AI development prompt log](PROMPTS.md)
+- [Project report](PROJECT_REPORT.md)
+- [Five-minute demo recording script](DEMO_SCRIPT.md)
 
 ## Run automated tests
 
@@ -120,6 +122,11 @@ TrustVault/
 ├── database.py
 ├── requirements.txt
 ├── render.yaml
+├── API.md
+├── THREATS.md
+├── PROMPTS.md
+├── PROJECT_REPORT.md
+├── DEMO_SCRIPT.md
 ├── templates/
 │   ├── index.html
 │   ├── login.html
