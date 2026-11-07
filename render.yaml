@@ -7,3 +7,11 @@ services:
     envVars:
       - key: SECRET_KEY
         generateValue: true
+      - key: AUDIT_SECRET
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "1"
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false

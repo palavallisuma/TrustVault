@@ -1,0 +1,6 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edit document - TrustVault</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head><body>
+<main class="container"><h1>Edit {{ document['original_name'] }}</h1><p>Only TXT documents can be edited here.</p>
+<form method="post">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="content">Document content</label><textarea id="content" name="content" rows="18" style="width:100%">{{ content }}</textarea><button type="submit">Save changes</button></form>
+<p><a href="{{ url_for('dashboard') }}">Back to dashboard</a></p></main></body></html>
