@@ -37,3 +37,8 @@ A `view` event means the server served the preview route. It cannot prove that a
 ## File constraints
 
 Maximum upload size is 10 MB. Allowed filename extensions are PDF, TXT, DOC, DOCX, PNG, JPG and JPEG. Only TXT files support in-app editing. Extension checking does not provide malware scanning or deep content validation.
+
+
+## Request protection
+
+All POST form submissions, including login, registration, upload, share, revoke, edit and logout, require a valid Flask-WTF CSRF token. GET routes are read-only and do not require a CSRF form token.
