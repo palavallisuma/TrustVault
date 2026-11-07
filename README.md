@@ -91,7 +91,7 @@ Each new audit record includes an HMAC-SHA256 signature and the previous record'
 ## Security notes and limitations
 
 - Passwords are hashed; they are not stored as plain text.
-- Protected routes check login and document permissions on the server.
+- Protected routes check login and document permissions on the server.\n- State-changing forms use CSRF tokens.
 - File type and file size are checked.
 - In-app editing is supported for TXT files only; other file types can be uploaded and downloaded.
 - SQLite and uploaded files are stored on the local filesystem. A hosted service needs persistent storage or external database/file storage to retain data across restarts.
