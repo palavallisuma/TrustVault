@@ -19,6 +19,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(database, "DATABASE", str(db_path))
     app.config.update(
         TESTING=True,
+        WTF_CSRF_ENABLED=False,
         SECRET_KEY="test-secret-key",
         UPLOAD_FOLDER=str(upload_path),
         MAX_CONTENT_LENGTH=10 * 1024 * 1024,
@@ -228,3 +229,16 @@ def test_search_by_owner_and_date_range(client):
     assert b"dated.txt" not in client.get(
         "/dashboard?date_from=2026-11-08"
     ).data
+
+
+
+def test_post_without_csrf_token_is_rejected(client):
+    app.config["WTF_CSRF_ENABLED"] = True
+    try:
+        response = client.post(
+            "/register",
+            data={"username": "csrf-user", "password": "strong-password-123"},
+        )
+        assert response.status_code == 400
+    finally:
+        app.config["WTF_CSRF_ENABLED"] = False
