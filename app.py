@@ -231,6 +231,25 @@ def download(document_id):
     return send_from_directory(app.config["UPLOAD_FOLDER"], document["stored_name"],
                                as_attachment=True, download_name=document["original_name"])
 
+@app.route("/view/<int:document_id>")
+@login_required
+def view_document(document_id):
+    user_id = session["user_id"]
+    if not can_access_document(user_id, document_id):
+        deny(user_id, "view", document_id)
+    document = get_db().execute(
+        "SELECT * FROM documents WHERE id=?", (document_id,)
+    ).fetchone()
+    path = os.path.join(app.config["UPLOAD_FOLDER"], document["stored_name"])
+    if not os.path.isfile(path):
+        abort(404)
+    # Records that the application served this route, not proof a person read it.
+    log_action(user_id, "view", document_id, document["original_name"])
+    return send_from_directory(
+        app.config["UPLOAD_FOLDER"], document["stored_name"],
+        as_attachment=False, download_name=document["original_name"]
+    )
+
 @app.route("/edit/<int:document_id>", methods=["GET", "POST"])
 @login_required
 def edit_document(document_id):
