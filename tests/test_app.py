@@ -186,3 +186,45 @@ def test_unsupported_file_type_is_rejected(client):
     login(client, "alice")
     response = upload(client, "payload.exe")
     assert b"supported file" in response.data
+
+
+def test_view_document_is_audited(client):
+    register(client, "alice")
+    login(client, "alice")
+    upload(client, "view-me.txt", b"preview content")
+    response = client.get("/view/1")
+    assert response.status_code == 200
+    assert response.data == b"preview content"
+    assert db_one(
+        "SELECT id FROM audit_logs WHERE action='view' AND document_id=1"
+    ) is not None
+
+
+def test_share_and_revoke_are_audited(client):
+    register(client, "alice")
+    register(client, "bob")
+    login(client, "alice")
+    upload(client)
+    client.post("/share/1", data={"user_id": "2", "permission": "read"})
+    client.post("/revoke/1/2")
+    assert db_one(
+        "SELECT id FROM audit_logs WHERE action='share' AND document_id=1"
+    ) is not None
+    assert db_one(
+        "SELECT id FROM audit_logs WHERE action='revoke' AND document_id=1"
+    ) is not None
+
+
+def test_search_by_owner_and_date_range(client):
+    register(client, "alice")
+    login(client, "alice")
+    upload(client, "dated.txt", b"data", "College")
+    db_exec(
+        "UPDATE documents SET created_at='2026-11-07T10:00:00+00:00' WHERE id=1"
+    )
+    assert b"dated.txt" in client.get(
+        "/dashboard?owner=alice&date_from=2026-11-07&date_to=2026-11-07"
+    ).data
+    assert b"dated.txt" not in client.get(
+        "/dashboard?date_from=2026-11-08"
+    ).data
