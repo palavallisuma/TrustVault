@@ -182,10 +182,18 @@ def dashboard():
     sql += " ORDER BY d.created_at DESC"
     documents = db.execute(sql, params).fetchall()
     users = db.execute("SELECT id,username FROM users WHERE id!=?", (user_id,)).fetchall()
+    shared = {}
+    for document in documents:
+        shared[document["id"]] = db.execute(
+            """SELECT p.user_id, p.permission, u.username
+               FROM permissions p JOIN users u ON u.id=p.user_id
+               WHERE p.document_id=? ORDER BY u.username""",
+            (document["id"],)
+        ).fetchall()
     current_user = db.execute("SELECT role FROM users WHERE id=?", (user_id,)).fetchone()
     return render_template("dashboard.html", documents=documents, users=users, q=q,
                            owner=owner, category=category, date_from=date_from,
-                           date_to=date_to, role=current_user["role"])
+                           date_to=date_to, role=current_user["role"], shared=shared)
 
 @app.route("/upload", methods=["POST"])
 @login_required

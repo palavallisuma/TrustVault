@@ -63,12 +63,14 @@ Do not use a hard-coded default admin password. Set these environment variables 
 ```bash
 export ADMIN_USERNAME="your-admin-name"
 export ADMIN_PASSWORD="use-a-unique-password-of-at-least-12-characters"
+export AUDIT_SECRET="another-long-random-secret-kept-stable"
 ```
 
 PowerShell:
 ```powershell
 $env:ADMIN_USERNAME="your-admin-name"
 $env:ADMIN_PASSWORD="use-a-unique-password-of-at-least-12-characters"
+$env:AUDIT_SECRET="another-long-random-secret-kept-stable"
 ```
 
 On startup, TrustVault creates or promotes that account to Admin. Keep these values private. For production, also set a separate long random `AUDIT_SECRET`; do not change it after audit entries have been written, or integrity verification will fail.
