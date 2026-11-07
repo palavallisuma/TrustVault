@@ -64,6 +64,7 @@ def init_db():
         db.execute("ALTER TABLE audit_logs ADD COLUMN previous_hash TEXT NOT NULL DEFAULT ''")
     if "entry_hash" not in audit_columns:
         db.execute("ALTER TABLE audit_logs ADD COLUMN entry_hash TEXT NOT NULL DEFAULT ''")
+    db.execute("UPDATE users SET role='viewer' WHERE role NOT IN ('admin','owner','viewer')")
     db.commit()
     db.close()
 
