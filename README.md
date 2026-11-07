@@ -9,11 +9,11 @@ TrustVault is a Flask web application for private document upload, controlled sh
 
 - Register and log in with hashed passwords.
 - Roles: Admin, Owner, and Viewer.
-- Upload and download supported documents (maximum 10 MB).
+- Upload, preview and download supported documents (maximum 10 MB).
 - Owners can share documents with read or edit permission and revoke access.
 - Search accessible documents by file name, owner, category, and date range.
 - Edit shared TXT documents when the user has edit permission.
-- Users can view their own activity; Admin can view the global audit dashboard.
+- Audit events include login, upload, view, download, edit, share, revoke and denied access; Admin can view the global audit dashboard.
 - HMAC-SHA256 chained audit records with an integrity verification check.
 - Server-side access checks and automated tests.
 
@@ -75,16 +75,16 @@ $env:AUDIT_SECRET="another-long-random-secret-kept-stable"
 
 On startup, TrustVault creates or promotes that account to Admin. Keep these values private. For production, also set a separate long random `AUDIT_SECRET`; do not change it after audit entries have been written, or integrity verification will fail.
 
-## Run automated tests
+## Demo account setup\n\nTrustVault does not publish default usernames or passwords. Configure the Admin account using the private Render environment variables below. For Owner and Viewer demonstrations, register two separate accounts in the application. Log in as the Owner, upload a sample document, then use the Share form to give the Viewer read or edit permission. Use the Owner account to revoke access. Never commit real passwords or private documents to GitHub.\n\n## Project documentation\n\n- [Threat model and security limitations](THREATS.md)\n- [HTTP route and permission reference](API.md)\n- [AI development prompt log](PROMPTS.md)\n\n## Run automated tests
 
 ```bash
 pip install -r requirements.txt
 pytest -q
 ```
 
-The tests cover account roles, upload/download, sharing permissions, editing, search, admin audit access, denied access logging, file validation, and audit tampering detection. Check the repository's **Actions** tab for the actual CI result.
+The tests cover account roles, upload/view/download, sharing and revocation, editing, search filters, admin audit access, denied access logging, file validation, and audit tampering detection. Check the repository's **Actions** tab for the actual CI result.
 
-## Audit integrity
+## Preview and audit events\n\nUse the **View** link to serve a document through the preview route. A view audit event means the server served that route; it cannot prove that a person actually read the content. Download, upload, edit, share and revoke actions are recorded separately.\n\n## Audit integrity
 
 Each new audit record includes an HMAC-SHA256 signature and the previous record's hash. The Admin audit page checks the chain and reports whether the signed records still match. This helps detect changes to recorded events. Protect the `AUDIT_SECRET` environment variable and database; this is an educational project and not a substitute for a professionally audited logging service.
 
