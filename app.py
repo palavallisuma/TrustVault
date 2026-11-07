@@ -307,5 +307,23 @@ def too_large(error):
 
 init_db()
 
+def configure_initial_admin():
+    username = os.environ.get("ADMIN_USERNAME", "").strip()
+    password = os.environ.get("ADMIN_PASSWORD", "")
+    if not username or len(password) < 12:
+        return
+    db = sqlite3.connect(__import__("database").DATABASE)
+    try:
+        db.execute(
+            "INSERT INTO users(username,password_hash,role) VALUES(?,?, 'admin') "
+            "ON CONFLICT(username) DO UPDATE SET role='admin', password_hash=excluded.password_hash",
+            (username, generate_password_hash(password))
+        )
+        db.commit()
+    finally:
+        db.close()
+
+configure_initial_admin()
+
 if __name__ == "__main__":
     app.run(debug=True)

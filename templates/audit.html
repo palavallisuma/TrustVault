@@ -1,27 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TrustVault - Audit History</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-<main class="container" style="max-width: 900px;">
-    <h1>TrustVault</h1>
-    <h2>Your audit history</h2>
-    <p><a href="{{ url_for('dashboard') }}">Back to dashboard</a></p>
-    {% if logs %}
-        {% for log in logs %}
-        <section class="document">
-            <strong>{{ log['action'] }}</strong>
-            <p>{{ log['details'] or 'No additional details' }}</p>
-            <p class="small">{{ log['created_at'] }}</p>
-        </section>
-        {% endfor %}
-    {% else %}
-        <p>No activity recorded yet.</p>
-    {% endif %}
-</main>
-</body>
-</html>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrustVault Audit</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head><body>
+<main class="container" style="max-width:950px"><h1>TrustVault</h1><h2>{% if admin %}Admin audit dashboard{% else %}Your audit history{% endif %}</h2>
+{% if admin %}<p>Audit chain integrity: <strong>{{ 'VALID' if chain_valid else 'FAILED — possible alteration' }}</strong></p>{% endif %}
+<p><a href="{{ url_for('dashboard') }}">Back to dashboard</a></p>
+{% for log in logs %}<section class="document"><strong>{{ log['action'] }}</strong><p>User: {{ log['username'] or 'Unknown' }} | {{ log['details'] or '' }}</p>
+<p class="small">{{ log['created_at'] }}</p>{% if admin %}<p class="small">Record hash: {{ log['entry_hash'] }}</p>{% endif %}</section>
+{% else %}<p>No activity recorded.</p>{% endfor %}</main></body></html>
