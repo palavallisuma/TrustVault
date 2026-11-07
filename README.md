@@ -1,57 +1,34 @@
 # TrustVault
 
-**TrustVault** is a Flask-based secure document-sharing application. It is designed to let registered users upload documents, keep ownership of their files, share access with other users, and review account activity.
+TrustVault is a web application for safely uploading and sharing documents. Users can create an account, upload files, and share documents with other registered users.
 
-- **Live demo:** https://trustvault-zkiw.onrender.com
-- **GitHub repository:** https://github.com/palavallisuma/TrustVault
-
-## Contents
-
-- [TrustVault](#trustvault)
-- [Problem statement](#problem-statement)
-- [Features](#features)
-- [Project structure](#project-structure)
-- [Run locally](#run-locally)
-- [Run automated tests](#run-automated-tests)
-- [Deploy on Render](#deploy-on-render)
-- [Security notes](#security-notes)
-- [Current implementation status](#current-implementation-status)
-
-## Problem statement
-
-Documents shared between people or teams can be exposed, changed, or downloaded by users who should not have access. TrustVault addresses this problem by providing a centralized application for document storage and controlled sharing.
-
-The project objectives are to:
-
-1. Allow users to register, sign in, and manage their own documents.
-2. Support document upload, download, and organized access.
-3. Let document owners grant and revoke document-specific permissions.
-4. Distinguish read access from edit access and prevent unauthorized actions.
-5. Record important activity, including access-denied attempts, for accountability.
-6. Provide an audit view so activity can be reviewed.
-7. Validate uploaded files and restrict unsupported file types and oversized uploads.
-8. Use automated tests to check authentication, permission enforcement, and isolation between users.
-9. Document security assumptions, threats, and the use of AI assistance where applicable.
+- **Live Demo:** https://trustvault-zkiw.onrender.com
+- **GitHub Repository:** https://github.com/palavallisuma/TrustVault
 
 ## Features
 
-The current application includes:
+- Create an account and log in.
+- Upload and download documents.
+- Keep your uploaded documents private.
+- Share documents with read or edit permission.
+- Revoke access to a shared document.
+- Check your own activity history.
+- Accept PDF, TXT, DOC, DOCX, PNG, JPG, and JPEG files.
+- Maximum file size: 10 MB.
 
-- User registration and login.
-- Password hashing using Werkzeug.
-- Private document ownership.
-- Upload support for PDF, TXT, DOC, DOCX, PNG, JPG, and JPEG files.
-- A maximum upload size of 10 MB.
-- File-name sanitization and randomized stored file names.
-- Document sharing with read or edit permission values.
-- Server-side checks for document download access.
-- Owner-only permission sharing and revocation routes.
-- Audit entries for login, logout, upload, download, sharing, revocation, and denied downloads.
-- Per-user audit history.
-- SQLite database storage.
-- GitHub Actions workflow configured to run lint checks and pytest.
+## Problem Statement
 
-## Project structure
+When documents are shared, people who should not have access may view or download them. TrustVault aims to solve this problem by allowing document owners to control who can access their files.
+
+The project aims to:
+- Keep each user's documents private.
+- Allow owners to share and revoke access.
+- Give users read or edit permissions.
+- Block users who do not have permission.
+- Record important activities.
+- Test that users cannot access other users' private documents.
+
+## Project Structure
 
 ```text
 TrustVault/
@@ -73,133 +50,113 @@ TrustVault/
 └── README.md
 ```
 
-## Run locally
+## Run Locally
 
-### 1. Install Python
+Follow these steps to run TrustVault on your computer.
 
-Install Python 3.10 or later.
+**1. Install Python 3.10 or later.**
 
-### 2. Clone the repository
+**2. Download the project:**
 
 ```bash
 git clone https://github.com/palavallisuma/TrustVault.git
 cd TrustVault
 ```
 
-### 3. Create and activate a virtual environment
-
-**Windows (Command Prompt):**
+**3. Create a virtual environment:**
 
 ```bash
 python -m venv venv
+```
+
+Activate it:
+
+Windows:
+```bash
 venv\\Scripts\\activate
 ```
 
-**Linux / macOS:**
-
+Linux / macOS:
 ```bash
-python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 4. Install dependencies
+**4. Install the required packages:**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5. Configure the Flask secret key
+**5. Set a secret key.** Keep this value private.
 
-Set a long, random secret key in your environment before running the application. Do not commit the secret key to GitHub.
-
-**Windows (PowerShell):**
-
+Windows PowerShell:
 ```powershell
-$env:SECRET_KEY = "replace-with-a-long-random-secret"
+$env:SECRET_KEY = "your-long-random-secret"
 ```
 
-**Linux / macOS:**
-
+Linux / macOS:
 ```bash
-export SECRET_KEY="replace-with-a-long-random-secret"
+export SECRET_KEY="your-long-random-secret"
 ```
 
-### 6. Start the application
+**6. Start the application:**
 
 ```bash
 python app.py
 ```
 
-Open this address in your browser:
+Open http://127.0.0.1:5000 in your browser. Create an account and log in.
 
-http://127.0.0.1:5000
+## Run Automated Tests
 
-Create an account using the registration page, then sign in. The application initializes its SQLite database when it starts.
-
-## Run automated tests
-
-Install the project dependencies and pytest:
+Run these commands from the project folder:
 
 ```bash
-pip install -r requirements.txt
 pip install pytest
-```
-
-Run the test suite from the repository root:
-
-```bash
 pytest
 ```
 
-The GitHub Actions workflow in `.github/workflows/python-app.yml` is configured to run Python lint checks and pytest on pushes and pull requests targeting `main`.
+GitHub Actions is also set up to run code checks and tests when changes are pushed to GitHub or a pull request is created. Check the **Actions** tab in the repository to see the actual result.
 
 ## Deploy on Render
 
-This repository includes a `render.yaml` file for a Render web service.
+TrustVault is deployed using Render.
 
-1. Push the project to GitHub.
-2. Sign in to [Render](https://render.com/).
-3. Choose **New** → **Blueprint** (or create a **Web Service** and connect the GitHub repository).
-4. Select the `palavallisuma/TrustVault` repository.
-5. If using the Blueprint, let Render read the settings from `render.yaml`.
-6. Confirm the build command is `pip install -r requirements.txt`.
-7. Confirm the start command is `gunicorn app:app`.
-8. In the Render environment settings, set `SECRET_KEY` to a long, random secret value. Keep it private.
-9. Deploy and open the service URL.
+To deploy your own copy:
 
-**Live application:** https://trustvault-zkiw.onrender.com
+1. Sign in at [Render](https://render.com/).
+2. Choose **New** and create a **Web Service** or use the Blueprint option.
+3. Connect your GitHub account.
+4. Select the `TrustVault` repository.
+5. Set the build command to `pip install -r requirements.txt`.
+6. Set the start command to `gunicorn app:app`.
+7. Add a private environment variable named `SECRET_KEY`.
+8. Deploy the application.
 
-> **Deployment storage note:** The current application stores its SQLite database and uploaded files on the service's local filesystem. On a hosting plan with an ephemeral filesystem, this data can be lost when the service restarts or is redeployed. Configure persistent storage or move to managed database/object storage before relying on the deployment for important documents.
+**Open the live application:** https://trustvault-zkiw.onrender.com
 
-## Security notes
+**Note:** The current app saves uploaded files and its SQLite database on local storage. Depending on the Render service plan, this data may be lost after a restart or redeployment. Persistent storage is needed before using it for important documents.
 
-- Passwords are stored as Werkzeug password hashes, not as plain text.
-- File extensions are checked against an allowlist, file names are sanitized, and stored names are randomized.
-- The application enforces login checks and verifies document access on the download route.
-- Sharing and revocation routes check that the requesting user owns the document.
-- Uploads are limited to 10 MB.
-- Keep `SECRET_KEY` in the hosting provider's environment settings; never publish it in source code or screenshots.
-- Use HTTPS in deployment and restrict access to the hosting account and its environment variables.
-- This project is an educational prototype. Do not upload confidential or sensitive real-world documents until the remaining security and deployment limitations have been addressed.
+## Security Notes
 
-## Current implementation status
+- Passwords are stored as password hashes.
+- Only allowed file types can be uploaded.
+- File names are checked before saving.
+- Users must log in to access protected pages.
+- The app checks permission before allowing a document download.
+- Only the document owner can share or revoke access.
+- Keep your secret key private.
+- This is an educational project. Do not upload confidential documents.
 
-The following distinction keeps the project documentation accurate:
+## Current Project Status
 
-| Problem-statement requirement | Current status in this repository |
-|---|---|
-| User registration and login | Implemented |
-| Password hashing | Implemented |
-| Document upload and download | Implemented |
-| Per-document read/edit permission records | Implemented |
-| Owner-controlled sharing and revocation | Implemented |
-| Download authorization checks | Implemented |
-| Audit entries, including denied downloads | Implemented using SQLite audit records |
-| Separate Admin, Owner, and Viewer role workflows | Not yet implemented; registration currently assigns the `user` role |
-| Search by document name, owner, category, or date | Not yet implemented |
-| Editing document contents through the application | Not yet implemented; edit permission can be assigned, but there is no document-editing route/UI |
-| Admin-wide activity dashboard | Not yet implemented; the audit page currently shows the signed-in user's own events |
-| HMAC-SHA256 tamper-evident audit chain | Not yet implemented; current audit records are ordinary SQLite rows |
-| Complete automated security test coverage | Verify the tests in the `tests/` directory and the latest GitHub Actions run |
+Some problem-statement requirements are not yet available in the current application:
 
-The status table describes the code currently in the repository; it does not claim that unimplemented requirements are complete.
+- Separate Admin, Owner, and Viewer roles.
+- Search documents by name, owner, category, or date.
+- Editing document contents inside the application.
+- An admin page to view all users' activity.
+- A tamper-evident HMAC audit log.
+- Full automated security test coverage.
+
+The current audit history is stored in the SQLite database. These features should not be considered completed until they are added and tested.
