@@ -116,6 +116,7 @@ def test_editor_can_edit_text_document(client):
     assert client.get("/edit/1").status_code == 200
     client.post("/edit/1", data={"content": "changed"})
     assert client.get("/download/1").data == b"changed"
+    assert db_one("SELECT id FROM audit_logs WHERE action='edit' AND document_id=1") is not None
 
 
 def test_non_owner_cannot_share_or_revoke(client):
@@ -164,8 +165,12 @@ def test_denied_download_is_audited(client):
     client.post("/logout")
     login(client, "bob")
     assert client.get("/download/1").status_code == 403
+    assert client.get("/view/1").status_code == 403
     assert db_one(
         "SELECT id FROM audit_logs WHERE action='denied_download'"
+    ) is not None
+    assert db_one(
+        "SELECT id FROM audit_logs WHERE action='denied_view'"
     ) is not None
 
 
@@ -242,3 +247,22 @@ def test_post_without_csrf_token_is_rejected(client):
         assert response.status_code == 400
     finally:
         app.config["WTF_CSRF_ENABLED"] = False
+
+
+
+def test_revoked_viewer_loses_document_access(client):
+    register(client, "owner")
+    register(client, "viewer")
+    login(client, "owner")
+    upload(client, "private.txt", b"private")
+    client.post("/share/1", data={"user_id": "2", "permission": "read"})
+    client.post("/logout")
+    login(client, "viewer")
+    assert client.get("/view/1").status_code == 200
+    client.post("/logout")
+    login(client, "owner")
+    client.post("/revoke/1/2")
+    client.post("/logout")
+    login(client, "viewer")
+    assert client.get("/view/1").status_code == 403
+    assert client.get("/download/1").status_code == 403
