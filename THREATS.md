@@ -26,7 +26,7 @@ TrustVault is an educational Flask application for uploading documents and shari
 | Password disclosure from database theft | Passwords are stored as Werkzeug password hashes, not plain text | No multi-factor authentication or login rate limiting |
 | User accesses another user's document | Server-side owner/share permission checks on view, download and edit routes | Must be tested on the deployed instance; administrator does not automatically own every document |
 | Viewer changes a read-only document | Edit route requires owner or explicit edit permission | Editing is limited to TXT files |
-| Owner's sharing controls abused by another user | Share and revoke routes require document ownership | CSRF protection is not currently implemented; malicious cross-site form submissions remain a risk |
+| Cross-site request forgery (CSRF) | Flask-WTF CSRF tokens protect POST forms; the test suite checks rejection of a POST without a token | CSRF protection does not prevent every browser or account-compromise attack |
 | Unsafe filename/path manipulation | Werkzeug secure_filename and generated stored names | File content is not malware-scanned |
 | Oversized upload | Flask request limit and 10 MB application limit | Allowed extension checking is not a substitute for MIME/content inspection |
 | Unsupported file extension | Server-side extension allow-list | An attacker may rename a file; actual file contents are not deeply validated |
@@ -50,7 +50,6 @@ The automated tests cover authentication, owner promotion, permitted and denied 
 
 ## Known work not implemented
 
-- CSRF tokens on state-changing forms
 - Malware scanning and deep file-content validation
 - Login throttling / account lockout
 - Multi-factor authentication
