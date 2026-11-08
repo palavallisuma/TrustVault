@@ -7,6 +7,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import database
+import app as app_module
 from app import app
 
 
@@ -95,7 +96,7 @@ def test_viewer_is_read_only_even_if_database_grant_is_edit(client):
         db.execute("INSERT INTO documents(owner_id, original_name, stored_name, category, created_at) VALUES (1,'a.txt','a.txt','General','2026-01-01')")
         db.execute("INSERT INTO permissions(document_id,user_id,permission) VALUES (1,2,'edit')")
         db.commit()
-    Path(app.UPLOAD_FOLDER, "a.txt").write_bytes(b"viewer download test")
+    Path(app_module.UPLOAD_FOLDER, "a.txt").write_bytes(b"viewer download test")
     login(client, "viewer")
     assert client.get("/download/1").status_code == 200
     assert client.post("/document/1/update", data={"name":"b.txt","category":"New"}).status_code == 403
