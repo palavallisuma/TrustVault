@@ -89,11 +89,12 @@ def test_shared_user_can_download_but_unshared_user_cannot(client):
 def test_viewer_is_read_only_even_if_database_grant_is_edit(client):
     register(client, "owner")
     register(client, "viewer")
-    db = database.get_db()
-    db.execute("UPDATE users SET role='viewer' WHERE username='viewer'")
-    db.execute("INSERT INTO documents(owner_id, original_name, stored_name, category, created_at) VALUES (1,'a.txt','a.txt','General','2026-01-01')")
-    db.execute("INSERT INTO permissions(document_id,user_id,permission) VALUES (1,2,'edit')")
-    db.commit()
+    with app.app_context():
+        db = database.get_db()
+        db.execute("UPDATE users SET role='viewer' WHERE username='viewer'")
+        db.execute("INSERT INTO documents(owner_id, original_name, stored_name, category, created_at) VALUES (1,'a.txt','a.txt','General','2026-01-01')")
+        db.execute("INSERT INTO permissions(document_id,user_id,permission) VALUES (1,2,'edit')")
+        db.commit()
     login(client, "viewer")
     assert client.get("/download/1").status_code == 200
     assert client.post("/document/1/update", data={"name":"b.txt","category":"New"}).status_code == 403
@@ -134,19 +135,21 @@ def test_disallowed_extension_is_rejected(client):
 
 
 def test_admin_can_view_activity_and_create_viewer(client):
-    db = database.get_db()
     from werkzeug.security import generate_password_hash
-    db.execute("INSERT INTO users(username,password_hash,role) VALUES(?,?,?)",
-               ("admin", generate_password_hash("admin-password"), "admin"))
-    db.commit()
+    with app.app_context():
+        db = database.get_db()
+        db.execute("INSERT INTO users(username,password_hash,role) VALUES(?,?,?)",
+                   ("admin", generate_password_hash("admin-password"), "admin"))
+        db.commit()
     login(client, "admin", "admin-password")
     assert client.get("/admin").status_code == 200
     response = client.post("/admin/users", data={
         "username":"newviewer", "password":"viewer-password", "role":"viewer"
     })
     assert response.status_code == 302
-    user = db.execute("SELECT role FROM users WHERE username='newviewer'").fetchone()
-    assert user["role"] == "viewer"
+    with app.app_context():
+        user = database.get_db().execute("SELECT role FROM users WHERE username='newviewer'").fetchone()
+        assert user["role"] == "viewer"
 
 
 def test_delete_keeps_deletion_audit_record(client):
@@ -155,8 +158,9 @@ def test_delete_keeps_deletion_audit_record(client):
     upload_text_file(client)
     assert client.post("/delete/1").status_code == 302
     assert client.get("/download/1").status_code == 404
-    row = database.get_db().execute(
-        "SELECT action, document_id FROM audit_logs WHERE action='deletion'"
-    ).fetchone()
-    assert row["action"] == "deletion"
-    assert row["document_id"] is None
+    with app.app_context():
+        row = database.get_db().execute(
+            "SELECT action, details FROM audit_logs WHERE action='deletion'"
+        ).fetchone()
+        assert row["action"] == "deletion"
+        assert "id=1" in row["details"]
