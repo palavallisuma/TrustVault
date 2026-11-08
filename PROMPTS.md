@@ -34,7 +34,7 @@ Updated: 2026-11-08. These entries describe the work performed during this secur
 - **What the tool produced:** Tests for unauthorized downloads, viewer read-only behavior, non-owner share/revoke denial, admin user creation and retained deletion evidence.
 - **What was wrong:** Some tests initially accessed Flask's request-scoped database connection without an application context, which would fail before testing the intended behavior.
 - **What I did instead:** Wrapped direct test database setup/assertions in an application context and updated logout tests for the POST-only route.
-- **Test commit:** https://github.com/palavallisuma/TrustVault/commit/6e71c53493321818fbf946f09a80b79e692d109f
+- **Test commit:** https://github.com/palavallisuma/TrustVault/commit/a8feca97487b9f8027e20c110c92745371903358
 
 ## 2026-11-08 — Entry 5: Deployment and honest limitations
 
