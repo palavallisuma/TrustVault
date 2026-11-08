@@ -119,6 +119,7 @@ def roles_required(*roles):
                 "SELECT role FROM users WHERE id = ?", (session["user_id"],)
             ).fetchone()
             if not user or user["role"] not in roles:
+                log_action(session["user_id"], "denied_role_access", None, request.path)
                 abort(403)
             return view(*args, **kwargs)
         return wrapped
