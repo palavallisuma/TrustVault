@@ -216,3 +216,18 @@ def test_delete_keeps_deletion_audit_record(client):
         assert row["document_id"] == 1
         from app import verify_audit_chain
         assert verify_audit_chain() is True
+
+
+def test_login_reconciles_configured_admin_role_and_password(client, monkeypatch):
+    register(client, "deployment-admin", password="old-owner-password")
+    monkeypatch.setenv("ADMIN_USERNAME", "deployment-admin")
+    monkeypatch.setenv("ADMIN_PASSWORD", "deployment-admin-password-123")
+
+    response = login(client, "deployment-admin", "deployment-admin-password-123")
+    assert response.status_code == 200
+    assert b"TrustVault Admin" in response.data
+    with app.app_context():
+        user = database.get_db().execute(
+            "SELECT role FROM users WHERE username='deployment-admin'"
+        ).fetchone()
+        assert user["role"] == "admin"
