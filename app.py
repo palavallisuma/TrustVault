@@ -429,10 +429,8 @@ def delete_document(document_id):
     user_id = session["user_id"]
     if document["owner_id"] != user_id and session.get("role") != "admin":
         abort(403)
-    log_action(user_id, "deletion", document_id, document["original_name"])
+    log_action(user_id, "deletion", None, "Deleted document id=" + str(document_id) + ": " + document["original_name"])
     db = get_db()
-    # Preserve the audit event while removing the document row.
-    db.execute("UPDATE audit_logs SET document_id = NULL WHERE document_id = ?", (document_id,))
     db.execute("DELETE FROM permissions WHERE document_id = ?", (document_id,))
     db.execute("DELETE FROM documents WHERE id = ?", (document_id,))
     db.commit()
