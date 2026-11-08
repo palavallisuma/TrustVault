@@ -354,6 +354,7 @@ def share(document_id):
     document = get_document_or_404(document_id)
     user_id = session["user_id"]
     if document["owner_id"] != user_id and session.get("role") != "admin":
+        log_action(user_id, "denied_share", document_id, "Non-owner attempted to change sharing")
         abort(403)
     target_id = request.form.get("user_id", type=int)
     permission = request.form.get("permission", "read")
@@ -387,6 +388,7 @@ def revoke(document_id, target_id):
     document = get_document_or_404(document_id)
     user_id = session["user_id"]
     if document["owner_id"] != user_id and session.get("role") != "admin":
+        log_action(user_id, "denied_revoke", document_id, "Non-owner attempted to revoke access")
         abort(403)
     get_db().execute(
         "DELETE FROM permissions WHERE document_id = ? AND user_id = ?",
@@ -405,6 +407,7 @@ def update_document(document_id):
     document = get_document_or_404(document_id)
     user_id = session["user_id"]
     if document["owner_id"] != user_id and not can_access_document(user_id, document_id, "edit"):
+        log_action(user_id, "denied_edit", document_id, "User attempted an unauthorized document edit")
         abort(403)
     if session.get("role") == "viewer":
         abort(403)
@@ -428,6 +431,7 @@ def delete_document(document_id):
     document = get_document_or_404(document_id)
     user_id = session["user_id"]
     if document["owner_id"] != user_id and session.get("role") != "admin":
+        log_action(user_id, "denied_delete", document_id, "Non-owner attempted document deletion")
         abort(403)
     log_action(user_id, "deletion", None, "Deleted document id=" + str(document_id) + ": " + document["original_name"])
     db = get_db()
