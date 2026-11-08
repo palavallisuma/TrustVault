@@ -7,3 +7,7 @@ services:
     envVars:
       - key: SECRET_KEY
         generateValue: true
+      - key: AUDIT_LOG_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
