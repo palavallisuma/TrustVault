@@ -72,6 +72,8 @@ def init_db():
         db.execute("ALTER TABLE audit_logs ADD COLUMN previous_hash TEXT NOT NULL DEFAULT ''")
     if "entry_hash" not in audit_columns:
         db.execute("ALTER TABLE audit_logs ADD COLUMN entry_hash TEXT NOT NULL DEFAULT ''")
+    # Migrate old generic accounts to the owner role.
+    db.execute("UPDATE users SET role = 'owner' WHERE role = 'user'")
     db.commit()
     db.close()
 
