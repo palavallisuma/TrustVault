@@ -54,7 +54,7 @@ The application creates the database directory and upload directory when it star
 
 ## Admin and demo account setup
 
-The first admin is created from `ADMIN_USERNAME` and `ADMIN_PASSWORD` only when the database has no admin account. Changing those environment variables does not reset an existing admin password.
+The exact account named by `ADMIN_USERNAME` is reconciled to the `admin` role at application startup and before each login. Its password hash is reset from `ADMIN_PASSWORD`. Choose a dedicated username intended only for administration; if that username currently belongs to an Owner, it will become an Admin.
 
 After first admin creation:
 
