@@ -35,6 +35,7 @@ def init_db():
             stored_name TEXT NOT NULL,
             category TEXT NOT NULL DEFAULT 'General',
             created_at TEXT NOT NULL,
+            deleted_at TEXT,
             FOREIGN KEY (owner_id) REFERENCES users(id)
         );
         CREATE TABLE IF NOT EXISTS permissions (
@@ -65,6 +66,8 @@ def init_db():
     }
     if "category" not in document_columns:
         db.execute("ALTER TABLE documents ADD COLUMN category TEXT NOT NULL DEFAULT 'General'")
+    if "deleted_at" not in document_columns:
+        db.execute("ALTER TABLE documents ADD COLUMN deleted_at TEXT")
     audit_columns = {
         row[1] for row in db.execute("PRAGMA table_info(audit_logs)").fetchall()
     }
