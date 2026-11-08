@@ -131,6 +131,30 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def valid_file_content(file, filename):
+    """Check basic file signatures; this is validation, not malware scanning."""
+    extension = filename.rsplit(".", 1)[1].lower()
+    header = file.stream.read(16)
+    file.stream.seek(0)
+    if extension == "pdf":
+        return header.startswith(b"%PDF-")
+    if extension == "png":
+        return header.startswith(b"\\x89PNG\\r\\n\\x1a\\n")
+    if extension in ("jpg", "jpeg"):
+        return header.startswith(b"\\xff\\xd8\\xff")
+    if extension == "doc":
+        return header.startswith(bytes.fromhex("D0CF11E0A1B11AE1"))
+    if extension == "docx":
+        return header.startswith(b"PK\\x03\\x04")
+    if extension == "txt":
+        try:
+            file.stream.read().decode("utf-8")
+            return True
+        except UnicodeDecodeError:
+            return False
+    return False
+
+
 def is_document_owner(user_id, document_id):
     document = get_db().execute(
         "SELECT owner_id FROM documents WHERE id = ?", (document_id,)
@@ -311,8 +335,8 @@ def upload():
     if not file or not file.filename:
         flash("Choose a file to upload.")
         return redirect(url_for("dashboard"))
-    if not allowed_file(file.filename):
-        flash("File type not allowed.")
+    if not allowed_file(file.filename) or not valid_file_content(file, file.filename):
+        flash("File type or file content is not valid.")
         return redirect(url_for("dashboard"))
     original_name = secure_filename(file.filename)
     if not original_name:
