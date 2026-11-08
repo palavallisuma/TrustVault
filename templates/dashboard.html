@@ -7,50 +7,77 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-<main class="container" style="max-width: 900px;">
+<main class="container wide">
     <h1>TrustVault</h1>
-    <h2>Welcome, {{ session.get('username', 'User') }}</h2>
+    <h2>Welcome, {{ session.get('username', 'User') }} ({{ role }})</h2>
     {% with messages = get_flashed_messages() %}
         {% for message in messages %}<p class="message">{{ message }}</p>{% endfor %}
     {% endwith %}
     <div class="actions">
-        <a class="button" href="{{ url_for('audit') }}">View audit history</a>
-        <a class="button" href="{{ url_for('logout') }}">Logout</a>
+        <a class="button" href="{{ url_for('audit') }}">My audit history</a>
+        <form method="POST" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Logout</button></form>
     </div>
+    {% if role == 'owner' %}
     <h2>Upload a document</h2>
     <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label for="file">Choose a file (maximum 10 MB)</label>
         <input id="file" type="file" name="file" required>
+        <label for="upload-category">Category</label>
+        <input id="upload-category" name="category" maxlength="80" value="General">
         <button type="submit">Upload document</button>
+    </form>
+    {% endif %}
+    <h2>Search documents</h2>
+    <form method="GET" action="{{ url_for('dashboard') }}">
+        <label for="q">Document name</label><input id="q" name="q" value="{{ search }}">
+        <label for="owner">Owner</label><input id="owner" name="owner" value="{{ owner_filter }}">
+        <label for="category">Category</label>
+        <select id="category" name="category"><option value="">All categories</option>
+            {% for item in categories %}<option value="{{ item['category'] }}" {% if category == item['category'] %}selected{% endif %}>{{ item['category'] }}</option>{% endfor %}
+        </select>
+        <label for="date-from">From date</label><input id="date-from" type="date" name="date_from" value="{{ date_from }}">
+        <label for="date-to">To date</label><input id="date-to" type="date" name="date_to" value="{{ date_to }}">
+        <button type="submit">Search</button>
     </form>
     <h2>Your documents and shared documents</h2>
     {% if documents %}
         {% for document in documents %}
         <section class="document">
             <strong>{{ document['original_name'] }}</strong>
-            <p class="small">Uploaded: {{ document['created_at'] }}</p>
-            <a href="{{ url_for('download', document_id=document['id']) }}">Download</a>
+            <p class="small">Owner: {{ document['owner_name'] }} | Category: {{ document['category'] }} | Uploaded: {{ document['created_at'] }}</p>
+            <p><a href="{{ url_for('download', document_id=document['id']) }}">Download</a></p>
+            {% if document['owner_id'] == session['user_id'] %}
             <h3>Share or update access</h3>
             <form method="POST" action="{{ url_for('share', document_id=document['id']) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label for="user-{{ document['id'] }}">Choose a user</label>
                 <select id="user-{{ document['id'] }}" name="user_id" required>
                     <option value="">Select user</option>
-                    {% for user in users %}
-                    <option value="{{ user['id'] }}">{{ user['username'] }}</option>
-                    {% endfor %}
+                    {% for user in users %}<option value="{{ user['id'] }}">{{ user['username'] }}</option>{% endfor %}
                 </select>
                 <label for="permission-{{ document['id'] }}">Permission</label>
-                <select id="permission-{{ document['id'] }}" name="permission">
-                    <option value="read">Read</option>
-                    <option value="edit">Edit</option>
-                </select>
+                <select id="permission-{{ document['id'] }}" name="permission"><option value="read">Read</option><option value="edit">Edit</option></select>
                 <button type="submit">Share document</button>
             </form>
+            {% endif %}
+            {% if document['owner_id'] == session['user_id'] or document['my_permission'] == 'edit' %}
+            <h3>Edit document details</h3>
+            <form method="POST" action="{{ url_for('update_document', document_id=document['id']) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>Display name</label><input name="name" value="{{ document['original_name'] }}" required>
+                <label>Category</label><input name="category" value="{{ document['category'] }}" required>
+                <button type="submit">Save details</button>
+            </form>
+            {% endif %}
+            {% if document['owner_id'] == session['user_id'] %}
+            <form method="POST" action="{{ url_for('delete_document', document_id=document['id']) }}" onsubmit="return confirm('Delete this document?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Delete document</button>
+            </form>
+            {% endif %}
         </section>
         {% endfor %}
-    {% else %}
-        <p>No documents yet. Upload your first document above.</p>
-    {% endif %}
+    {% else %}<p>No documents match your search.</p>{% endif %}
 </main>
 </body>
 </html>
