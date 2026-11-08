@@ -154,6 +154,54 @@ def test_admin_can_view_activity_and_create_viewer(client):
         assert user["role"] == "viewer"
 
 
+
+def test_seed_admin_creates_configured_admin_even_if_another_admin_exists(client, monkeypatch):
+    from werkzeug.security import check_password_hash, generate_password_hash
+    with app.app_context():
+        db = database.get_db()
+        db.execute("INSERT INTO users(username,password_hash,role) VALUES(?,?,?)",
+                   ("older-admin", generate_password_hash("old-password"), "admin"))
+        db.commit()
+    monkeypatch.setenv("ADMIN_USERNAME", "configured-admin")
+    monkeypatch.setenv("ADMIN_PASSWORD", "configured-password-123")
+    with app.app_context():
+        app_module.seed_admin()
+        user = database.get_db().execute(
+            "SELECT role, password_hash FROM users WHERE username='configured-admin'"
+        ).fetchone()
+        assert user["role"] == "admin"
+        assert check_password_hash(user["password_hash"], "configured-password-123")
+
+
+def test_seed_admin_promotes_only_the_configured_username(client, monkeypatch):
+    from werkzeug.security import check_password_hash, generate_password_hash
+    with app.app_context():
+        db = database.get_db()
+        db.execute("INSERT INTO users(username,password_hash,role) VALUES(?,?,?)",
+                   ("configured-owner", generate_password_hash("owner-password"), "owner"))
+        db.commit()
+    monkeypatch.setenv("ADMIN_USERNAME", "configured-owner")
+    monkeypatch.setenv("ADMIN_PASSWORD", "new-admin-password-123")
+    with app.app_context():
+        app_module.seed_admin()
+        user = database.get_db().execute(
+            "SELECT role, password_hash FROM users WHERE username='configured-owner'"
+        ).fetchone()
+        assert user["role"] == "admin"
+        assert check_password_hash(user["password_hash"], "new-admin-password-123")
+
+
+def test_dashboard_clears_session_when_user_record_is_missing(client):
+    with client.session_transaction() as session:
+        session["user_id"] = 99999
+        session["username"] = "deleted-user"
+        session["role"] = "owner"
+    response = client.get("/dashboard")
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+    with client.session_transaction() as session:
+        assert "user_id" not in session
+
 def test_delete_keeps_deletion_audit_record(client):
     register(client, "owner")
     login(client, "owner")
