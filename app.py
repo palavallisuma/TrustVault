@@ -160,7 +160,7 @@ def can_access_document(user_id, document_id, required="read"):
 
 def get_document_or_404(document_id):
     document = get_db().execute(
-        "SELECT * FROM documents WHERE id = ?", (document_id,)
+        "SELECT * FROM documents WHERE id = ? AND deleted_at IS NULL", (document_id,)
     ).fetchone()
     if not document:
         abort(404)
@@ -269,7 +269,7 @@ def dashboard():
              p.permission AS my_permission
              FROM documents d JOIN users u ON u.id = d.owner_id
              LEFT JOIN permissions p ON d.id = p.document_id AND p.user_id = ?
-             WHERE (d.owner_id = ? OR p.user_id = ?)"""
+             WHERE d.deleted_at IS NULL AND (d.owner_id = ? OR p.user_id = ?)"""
     args = [user_id, user_id, user_id]
     if search:
         sql += " AND d.original_name LIKE ?"
@@ -434,10 +434,10 @@ def delete_document(document_id):
     if document["owner_id"] != user_id and session.get("role") != "admin":
         log_action(user_id, "denied_delete", document_id, "Non-owner attempted document deletion")
         abort(403)
-    log_action(user_id, "deletion", None, "Deleted document id=" + str(document_id) + ": " + document["original_name"])
+    log_action(user_id, "deletion", document_id, document["original_name"])
     db = get_db()
+    db.execute("UPDATE documents SET deleted_at = ? WHERE id = ?", (now(), document_id))
     db.execute("DELETE FROM permissions WHERE document_id = ?", (document_id,))
-    db.execute("DELETE FROM documents WHERE id = ?", (document_id,))
     db.commit()
     try:
         os.remove(os.path.join(UPLOAD_FOLDER, os.path.basename(document["stored_name"])))
@@ -474,7 +474,7 @@ def admin():
     ).fetchall()
     documents = db.execute(
         """SELECT d.*, u.username AS owner_name FROM documents d
-           JOIN users u ON u.id = d.owner_id ORDER BY d.created_at DESC"""
+           JOIN users u ON u.id = d.owner_id WHERE d.deleted_at IS NULL ORDER BY d.created_at DESC"""
     ).fetchall()
     return render_template(
         "admin.html", users=users, logs=logs, documents=documents,
