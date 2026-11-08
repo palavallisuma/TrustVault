@@ -51,7 +51,7 @@ def log_action(user_id, action, document_id=None, details=""):
     previous = db.execute(
         "SELECT entry_hash FROM audit_logs ORDER BY id DESC LIMIT 1"
     ).fetchone()
-    previous_hash = previous["entry_hash"] if previous and previous["entry_hash"] else ""
+    previous_hash = previous["entry_hash"] if previous and previous["entry_hash"] else ("legacy-history" if previous else "")
     created_at = now()
     payload = {
         "user_id": user_id, "document_id": document_id, "action": action,
@@ -75,7 +75,14 @@ def verify_audit_chain():
     db = get_db()
     rows = db.execute("SELECT * FROM audit_logs ORDER BY id").fetchall()
     previous_hash = ""
+    started = False
     for row in rows:
+        # Old records cannot be authenticated retroactively; verify the new chain after them.
+        if not row["entry_hash"] and not started:
+            continue
+        if not started and row["previous_hash"] == "legacy-history":
+            previous_hash = "legacy-history"
+        started = True
         if (row["previous_hash"] or "") != previous_hash:
             return False
         payload = {
