@@ -25,8 +25,8 @@ Updated: 2026-11-08. These entries describe the work performed during this secur
 - **Prompt / request:** Add evidence that audit records have not been silently edited.
 - **What the tool produced:** HMAC-SHA256 entries linked to the previous entry, with an integrity verifier.
 - **What was wrong:** Updating an earlier audit row to clear its document foreign key would invalidate its hash. Old pre-upgrade rows also cannot be authenticated retroactively.
-- **What I did instead:** Kept audit entries immutable during deletion by recording the deleted document ID in the deletion event details. The verifier starts a new chain after legacy unhashed rows and the README explains this limitation.
-- **Code commit:** https://github.com/palavallisuma/TrustVault/commit/90cfb0cdef55c93a890c1d3961651b587e8b238c
+- **What I did instead:** Kept audit entries immutable during deletion by soft-deleting the document row, retaining its audit foreign key, removing its grants and deleting its stored file. The verifier starts a new chain after legacy unhashed rows and the README explains this limitation.
+- **Code commit:** https://github.com/palavallisuma/TrustVault/commit/d608c74bcdfdadea7745ab9f0e2061d88c751e64
 
 ## 2026-11-08 — Entry 4: Automated security tests
 
