@@ -160,7 +160,7 @@ def test_delete_keeps_deletion_audit_record(client):
     assert client.get("/download/1").status_code == 404
     with app.app_context():
         row = database.get_db().execute(
-            "SELECT action, details FROM audit_logs WHERE action='deletion'"
+            "SELECT action, document_id FROM audit_logs WHERE action='deletion'"
         ).fetchone()
         assert row["action"] == "deletion"
-        assert "id=1" in row["details"]
+        assert row["document_id"] == 1
