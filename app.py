@@ -194,18 +194,31 @@ def get_document_or_404(document_id):
 
 
 def seed_admin():
-    username = os.environ.get("ADMIN_USERNAME")
+    """Ensure the explicitly configured Render admin account exists.
+
+    The environment variables are the authority for this bootstrap account.
+    Other admin accounts and all document records are left untouched.
+    """
+    username = (os.environ.get("ADMIN_USERNAME") or "").strip()
     password = os.environ.get("ADMIN_PASSWORD")
     if not username or not password:
         return
     db = get_db()
-    existing = db.execute("SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
-    if not existing:
+    password_hash = generate_password_hash(password)
+    existing = db.execute(
+        "SELECT id, role FROM users WHERE username = ?", (username,)
+    ).fetchone()
+    if existing:
         db.execute(
-            "INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, 'admin')",
-            (username.strip(), generate_password_hash(password))
+            "UPDATE users SET password_hash = ?, role = 'admin' WHERE id = ?",
+            (password_hash, existing["id"])
         )
-        db.commit()
+    else:
+        db.execute(
+            "INSERT INTO users (username, password_hash, role) VALUES (?, ?, 'admin')",
+            (username, password_hash)
+        )
+    db.commit()
 
 
 @app.after_request
@@ -284,6 +297,11 @@ def dashboard():
     db = get_db()
     user_id = session["user_id"]
     user = db.execute("SELECT role FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        # The account may have been removed after this browser session was created.
+        session.clear()
+        flash("Your session expired. Please log in again.")
+        return redirect(url_for("login"))
     if user["role"] == "admin":
         return redirect(url_for("admin"))
     search = request.args.get("q", "").strip()
