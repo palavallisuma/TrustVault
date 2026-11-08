@@ -149,6 +149,7 @@ def valid_file_content(file, filename):
     if extension == "txt":
         try:
             file.stream.read().decode("utf-8")
+            file.stream.seek(0)
             return True
         except UnicodeDecodeError:
             return False
