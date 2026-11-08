@@ -63,7 +63,7 @@ $env:AUDIT_LOG_KEY = "replace-with-a-different-long-random-secret"
 python app.py
 ```
 
-Open http://127.0.0.1:5000 and register an owner account. To create the first administrator, set both `ADMIN_USERNAME` and `ADMIN_PASSWORD` before the first app start. The application creates that admin only when no admin account already exists. Log in as admin, then use the admin page to create viewer accounts.
+Open http://127.0.0.1:5000 and register an owner account. To create the first administrator, set both `ADMIN_USERNAME` and `ADMIN_PASSWORD` before the first app start. The application reconciles the exact configured username to the `admin` role at startup and before login, and resets that account's password hash to the configured `ADMIN_PASSWORD`. Use a dedicated admin username that is not intended for an ordinary Owner account. Log in with those exact environment-variable values; a successful Admin login opens `/admin`.
 
 ## Demo credentials for judges
 
@@ -75,7 +75,7 @@ Create dedicated demo accounts using synthetic data before sharing the live demo
 | Owner | `<add demo owner username>` | `<add demo-only password>` |
 | Viewer | `<add demo viewer username>` | `<add demo-only password>` |
 
-Do not publish personal passwords, production admin credentials, `SECRET_KEY`, or `AUDIT_LOG_KEY`. If the challenge requires public judge access, use accounts created only for this demo, restrict them to synthetic sample documents, and rotate/delete them after judging. Admin is initially created from the deployment environment only when no admin account already exists; changing environment variables does not reset an existing admin password.
+Do not publish personal passwords, production admin credentials, `SECRET_KEY`, or `AUDIT_LOG_KEY`. If the challenge requires public judge access, use accounts created only for this demo, restrict them to synthetic sample documents, and rotate/delete them after judging. The configured `ADMIN_USERNAME` is the deployment's authoritative admin account: on startup and before login, TrustVault ensures that account has the `admin` role and the password hash from `ADMIN_PASSWORD`. Choose a dedicated username; do not use an ordinary Owner account.
 
 See [DATABASE.md](DATABASE.md) for the schema, clean setup, Render persistent-disk configuration and demo-account creation steps.
 
