@@ -95,6 +95,7 @@ def test_viewer_is_read_only_even_if_database_grant_is_edit(client):
         db.execute("INSERT INTO documents(owner_id, original_name, stored_name, category, created_at) VALUES (1,'a.txt','a.txt','General','2026-01-01')")
         db.execute("INSERT INTO permissions(document_id,user_id,permission) VALUES (1,2,'edit')")
         db.commit()
+    Path(app.UPLOAD_FOLDER, "a.txt").write_bytes(b"viewer download test")
     login(client, "viewer")
     assert client.get("/download/1").status_code == 200
     assert client.post("/document/1/update", data={"name":"b.txt","category":"New"}).status_code == 403
@@ -164,3 +165,5 @@ def test_delete_keeps_deletion_audit_record(client):
         ).fetchone()
         assert row["action"] == "deletion"
         assert row["document_id"] == 1
+        from app import verify_audit_chain
+        assert verify_audit_chain() is True
