@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>TrustVault - Admin</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body><main class="container wide">
+<h1>TrustVault Admin</h1>
+<p>Signed in as {{ session.get('username') }} (administrator)</p>
+<p>Audit chain integrity: <strong>{{ 'Valid' if audit_verified else 'FAILED / legacy entries present' }}</strong></p>
+<form method="POST" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>Logout</button></form>
+<h2>Create owner or viewer account</h2>
+<form method="POST" action="{{ url_for('admin_create_user') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>Username</label><input name="username" minlength="3" required><label>Temporary password</label><input type="password" name="password" minlength="8" required>
+<label>Role</label><select name="role"><option value="owner">Owner</option><option value="viewer">Viewer</option></select><button>Create account</button></form>
+<h2>Users</h2>{% for user in users %}<section class="document">{{ user['username'] }} — {{ user['role'] }}</section>{% endfor %}
+<h2>All documents</h2>{% for doc in documents %}<section class="document">{{ doc['original_name'] }} — owner: {{ doc['owner_name'] }} — {{ doc['category'] }}</section>{% else %}<p>No documents.</p>{% endfor %}
+<h2>Recent system activity</h2>{% for log in logs %}<section class="document"><strong>{{ log['action'] }}</strong> — {{ log['username'] or 'Unknown user' }}<p>{{ log['details'] or '' }}</p><p class="small">{{ log['created_at'] }}</p></section>{% else %}<p>No activity.</p>{% endfor %}
+</main></body></html>
