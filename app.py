@@ -139,13 +139,13 @@ def valid_file_content(file, filename):
     if extension == "pdf":
         return header.startswith(b"%PDF-")
     if extension == "png":
-        return header.startswith(b"\\x89PNG\\r\\n\\x1a\\n")
+        return header.startswith(b"\${x}\${x}\${x}\${x}\${x}")
     if extension in ("jpg", "jpeg"):
-        return header.startswith(b"\\xff\\xd8\\xff")
+        return header.startswith(b"\${x}\${x}\${x}")
     if extension == "doc":
         return header.startswith(bytes.fromhex("D0CF11E0A1B11AE1"))
     if extension == "docx":
-        return header.startswith(b"PK\\x03\\x04")
+        return header.startswith(b"PK\${x}\${x}")
     if extension == "txt":
         try:
             file.stream.read().decode("utf-8")
