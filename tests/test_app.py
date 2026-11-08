@@ -132,7 +132,7 @@ def test_disallowed_extension_is_rejected(client):
     register(client, "alice")
     login(client, "alice")
     response = upload_text_file(client, filename="malware.exe")
-    assert b"File type not allowed" in response.data
+    assert b"File type or file content is not valid" in response.data
 
 
 def test_admin_can_view_activity_and_create_viewer(client):
