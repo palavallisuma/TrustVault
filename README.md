@@ -65,14 +65,19 @@ python app.py
 
 Open http://127.0.0.1:5000 and register an owner account. To create the first administrator, set both `ADMIN_USERNAME` and `ADMIN_PASSWORD` before the first app start. The application creates that admin only when no admin account already exists. Log in as admin, then use the admin page to create viewer accounts.
 
-## Seeded role credentials
+## Demo credentials for judges
 
-No working production passwords are published in this repository. For a reproducible judge/demo setup:
+Create dedicated demo accounts using synthetic data before sharing the live demo. The repository does not contain pre-seeded accounts, so the account owner must create these accounts in the deployed app and then replace the placeholders below with the actual demo-only credentials:
 
-1. Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` in the deployment environment before the first start.
-2. Register an owner through the public registration page.
-3. Log in as admin and create a viewer account on the admin page.
-4. Put the actual demo usernames and passwords in the private judge handover/README deployment copy. Never commit real passwords or the production secret key to a public repository.
+| Role | Demo username | Demo password |
+|---|---|---|
+| Admin | `<add dedicated demo admin username>` | `<add demo-only password>` |
+| Owner | `<add demo owner username>` | `<add demo-only password>` |
+| Viewer | `<add demo viewer username>` | `<add demo-only password>` |
+
+Do not publish personal passwords, production admin credentials, `SECRET_KEY`, or `AUDIT_LOG_KEY`. If the challenge requires public judge access, use accounts created only for this demo, restrict them to synthetic sample documents, and rotate/delete them after judging. Admin is initially created from the deployment environment only when no admin account already exists; changing environment variables does not reset an existing admin password.
+
+See [DATABASE.md](DATABASE.md) for the schema, clean setup, Render persistent-disk configuration and demo-account creation steps.
 
 ## Run automated tests
 
@@ -103,6 +108,6 @@ The repository includes `render.yaml`. Connect the GitHub repository to Render a
 - A local SQLite database is suitable for this small demonstration, not a high-volume multi-instance production service.
 - No malware scanning, MFA, external identity provider, version history or recovery workflow is included.
 - The edit permission currently permits editing document metadata (display name/category), not changing the binary contents of a PDF/Word file.
-- Review `THREATS.md`, `PROMPTS.md` and `API.md` for the security model, AI-use notes and route-level access rules.
+- Review `THREATS.md`, `PROMPTS.md`, `API.md` and `DATABASE.md` for the security model, AI-use notes, route-level access rules and database setup.
 
 This is an educational project. Do not upload confidential documents or use it as a production document-management service without a further security review.
