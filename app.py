@@ -266,6 +266,9 @@ def register():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
+        # Reconcile the configured deployment admin before checking credentials.
+        # This also handles environment variables added after the process first started.
+        seed_admin()
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         user = get_db().execute(
