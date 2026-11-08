@@ -1,27 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TrustVault - Audit History</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-<main class="container" style="max-width: 900px;">
-    <h1>TrustVault</h1>
-    <h2>Your audit history</h2>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>TrustVault - Audit History</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body><main class="container wide">
+    <h1>TrustVault</h1><h2>Your audit history</h2>
     <p><a href="{{ url_for('dashboard') }}">Back to dashboard</a></p>
-    {% if logs %}
-        {% for log in logs %}
-        <section class="document">
-            <strong>{{ log['action'] }}</strong>
-            <p>{{ log['details'] or 'No additional details' }}</p>
-            <p class="small">{{ log['created_at'] }}</p>
-        </section>
-        {% endfor %}
-    {% else %}
-        <p>No activity recorded yet.</p>
-    {% endif %}
-</main>
-</body>
-</html>
+    <p>Audit chain: <strong>{{ 'Valid' if verified else 'Integrity check failed or legacy entries need review' }}</strong></p>
+    {% for log in logs %}
+    <section class="document"><strong>{{ log['action'] }}</strong><p>{{ log['details'] or 'No additional details' }}</p><p class="small">{{ log['created_at'] }}</p></section>
+    {% else %}<p>No activity recorded yet.</p>{% endfor %}
+</main></body></html>
